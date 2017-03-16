@@ -1,1 +1,1 @@
-# jenkins2-demo
+# Jenkins 2 demo pipelines
