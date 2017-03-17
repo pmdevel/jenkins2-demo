@@ -1,21 +1,35 @@
 pipeline {
     agent none
-
     stages {
         stage('Build') {
-            agent {
-                label 'java'
-            }
             steps {
-                echo 'Building...'
+                echo 'Checkout app'
+                echo 'Build app'
+                echo 'Stash app'
             }
         }
-        stage('Test ') {
-            agent {
-                label 'java'
-            }
+
+        stage('Test') {
             steps {
-                echo 'Testing...'
+                parallel(
+                        "linux": {
+                            node('java') {
+                                echo 'Unstash "binary"'
+                                echo 'Testing linux...'
+                                sh "sleep 5s"
+                                echo 'Testing linux ready!'
+                            }
+
+                        },
+                        "windows": {
+                            node('java') {
+                                echo 'Unstash "binary"'
+                                echo 'Testing windows...'
+                                sh 'sleep 10s'
+                                echo 'Testing windows ready!'
+                            }
+                        }
+                )
             }
         }
     }
