@@ -1,21 +1,52 @@
+import groovy.json.JsonOutput
+
+def String getApplicationDockerImageName() {
+    return "pmdevel/codenite-demo-app"
+}
+
 pipeline {
     agent none
 
     stages {
         stage('Build') {
             agent {
-                label 'java'
+                label 'maven'
             }
             steps {
+                echo 'Check-out code'
+                // Use pipeline parameter for Git URL
+                sh 'git --version'
+                git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
                 echo 'Building...'
+
+                // Let Maven help you to create a "release" version. Use BUILD_NUMBER from Jenkins
+                sh 'mvn build-helper:parse-version versions:set -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.minorVersion}.$BUILD_NUMBER versions:commit '
+
+                script {
+                    def pom = readMavenPom file: 'pom.xml'
+                    def versionMap = [version: pom.version ]
+                    def jsonString = JsonOutput.toJson(versionMap)
+                    writeJSON file: 'version.json', json: jsonString
+                }
+                sh 'cat version.json'
+                stash includes: "version.json", name: "$JOB_NAME"
+                // Build application, package into docker image and push it to Docker Hub...
+                //sh "mvn clean package docker:build -DpushImage "
             }
         }
-        stage('Test ') {
+        stage('Test') {
             agent {
-                label 'java'
+                label 'maven'
             }
             steps {
                 echo 'Testing...'
+                unstash "$JOB_NAME"
+                sh 'cat version.json'
+                script {
+                    def versionMap = readJSON file: 'version.json'
+                }
+                echo "Application version: ${versionMap.version}"
+
             }
         }
     }
