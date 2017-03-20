@@ -1,27 +1,36 @@
 
 
-def startContainer(String containerVersion ) {
-    String containerName = getAppContainerName()
-    String alias = containerName.replace('/', '_')
-    sh "docker run --rm  --name ${alias} -d -p 9001:8080 ${containerName}:${containerVersion}"
-}
 
-def stopContainer(String containerVersion ) {
-    String containerName = getAppContainerName()
-    String alias = containerName.replace('/', '_')
-    sh "docker stop ${alias}"
-}
-
-def String getAppContainerName() {
+def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
 }
 
+def startContainer(String containerVersion, String containerId, String containerPort, String profile) {
+    String containerName = getAppContainerName()
+    String alias = containerName.replace('/', '-') + "-" + containerId
+    String javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${profile}"
+    sh "docker run --rm  --name ${alias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}"
+}
+
+def stopContainer(String containerId ) {
+    String containerName = getAppContainerName() + '-' + containerId
+    String alias = containerName.replace('/', '-')
+    sh "docker stop ${alias}"
+}
+
+def startTests(String profile, String targetUrl) {
+    echo 'Check-out test code...'
+    // Use pipeline parameter for Git URL
+    git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+    sh "mvn clean test -Dspring.profiles.active=${profile} -Dwebdriver.base.url=${targetUrl}"
+}
+
+//<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
 stage('Build') {
     node('maven') {
 
-        echo 'Check-out code'
+        echo 'Check-out code...'
         // Use pipeline parameter for Git URL
-        sh 'git --version'
         git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
         echo 'Building...'
 
@@ -41,7 +50,7 @@ stage('Build') {
     }
 }
 
-stage('Test') {
+stage('System Test (Parallel)') {
     node('maven') {
         echo 'Testing...'
         unstash "$JOB_NAME"
@@ -50,13 +59,68 @@ stage('Test') {
         echo "Application version: ${props.version}"
         def containerVersion = props.version
         def containerName = getAppContainerName()
+        echo "Start tests"
+        //parallel 'system-tests-suite1':{
+            // Start container
+            def containerPort = '9001'
+            def containerId = 'systemtest1'
+            echo "Starting ${containerName}:${containerPort}..."
+            startContainer(containerVersion, containerId, containerPort, 'systemtest');
+            startTests('systemtest', "http://172.17.0.4:9090")
+            stopContainer(containerId);
+        //}, 'system-tests-suite2':{
+        /*
+            def containerPort = '9002'
+            def containerId = 'suite2'
+            echo "Starting ${containerName}_part2:${containerPort}..."
+            startContainer(containerVersion, containerId, containerPort, 'systemtest');
+            startTests('systemtest', "http://172.17.0.5:9090")
+            stopContainer(containerId);
+            */
+        //}
+
+
+    }
+}
+
+stage('Acceptance Test') {
+    node('maven') {
+        echo 'Testing...'
+        unstash "$JOB_NAME"
+        sh 'cat version.properties'
+        def props = readProperties file: 'version.properties'
+        echo "Application version: ${props.version}"
+        def containerVersion = props.version
+        def containerName = getAppContainerName()
+        def containerPort = '9003'
+        def containerId = 'acceptance1'
         // Start container
         echo "Starting ${containerName}..."
-        startContainer(containerVersion);
+
+        startContainer(containerVersion, containerId, containerPort, 'acceptancetest');
         echo "Start tests"
-        sleep(10)
-        stopContainer(containerVersion);
-        echo "Stops ${getAppContainerName()}..."
+        startTests('acceptancetest', "http://172.17.0.4:9090")
+
+        echo "Stop ${getAppContainerName()}..."
+        stopContainer(containerId);
+
+    }
+}
+
+stage('Deploy to PRODUCTION') {
+    node('maven') {
+        echo 'Deploying to PRODUCTION...'
+        unstash "$JOB_NAME"
+        sh 'cat version.properties'
+        def props = readProperties file: 'version.properties'
+        echo "Application version: ${props.version}"
+        def containerVersion = props.version
+        def containerName = getAppContainerName()
+        def containerPort = '9004'
+        // Start container
+        echo "Starting ${containerName}..."
+
+        startContainer(containerVersion, 'prod', containerPort, 'production');
 
     }
 }
