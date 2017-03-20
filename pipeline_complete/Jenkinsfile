@@ -1,6 +1,3 @@
-
-
-
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
 }
@@ -12,7 +9,7 @@ def startContainer(String containerVersion, String containerId, String container
     sh "docker run --rm  --name ${alias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}"
 }
 
-def stopContainer(String containerId ) {
+def stopContainer(String containerId) {
     String containerName = getAppContainerName() + '-' + containerId
     String alias = containerName.replace('/', '-')
     sh "docker stop ${alias}"
@@ -25,17 +22,17 @@ def checkOutTestCode() {
     git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
 }
 
-def startTests(String profile, String sutUrl, String sutVersion) {
-    sh "mvn clean test -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
+def runTests(String profile, String sutUrl, String sutVersion, String testsToRun) {
+    sh "mvn clean test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
 boolean isContainerRunning(String containerId) {
-    def isRunning = sh (
+    def isRunning = sh(
             script: "docker inspect --format=\"{{ .State.Running }}\" ${containerId} || exit 0",
             returnStdout: true
     ).trim()
 
-    if ( isRunning == 'true') {
+    if (isRunning == 'true') {
         return true
     }
 
@@ -59,81 +56,78 @@ stage('Build and JUnit Test') {
         writeFile file: "version.properties", text: "version=${pom.version}"
 
         sh 'cat version.properties'
-        stash includes: "version.properties", name: "$JOB_NAME"
-        // Build application, package into docker image and push it to Docker Hub...
-        // version comes with build-arg VERSION
-        //sh "mvn clean package docker:build -DpushImage "
+
         sh "mvn clean test "
-        sh "find target "
 
         // Publish test result...
-        junit 'target/surefire-reports/TEST*.xml'
-        stash includes: "version.properties, target/**/*", name: "$JOB_NAME"
+        sh "mkdir -p testresult/junittest"
+        sh "cp target/surefire-reports/TEST*.xml testresult/junittest"
+        sh "rm -rf target/surefire-reports "
+        sh "find testresult/junittest"
+        step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
+        step([$class: 'JUnitResultArchiver', testResults: '**/testresult/junittest/TEST-*.xml'])
+
+        stash includes: "version.properties", name: "version"
     }
 }
 
-stage ('Build Docker Container') {
+stage('Build Docker Container') {
     node('maven') {
         echo 'Junit testing...'
-        unstash "$JOB_NAME"
-        sh 'find target '
+        unstash "version"
+
+        //sh "mvn package docker:build -DpushImage "
         sh "mvn package docker:build -DskipTests"
-        stash includes: "version.properties", name: "$JOB_NAME"
     }
 }
 
 stage('System Test (Parallel)') {
+
     node('maven') {
-        echo 'System Testing...'
-        unstash "$JOB_NAME"
-        sh 'cat version.properties'
-        def props = readProperties file: 'version.properties'
-        def containerVersion = props.version
-        def containerName = getAppContainerName()
-        checkOutTestCode()
-
-        parallel 'system-tests-suite1':{
-            // Start container
-            def containerPort = '9001'
-            def containerId = 'systemtest1'
-            echo "Starting container ${containerName}:${containerPort}..."
-            startContainer(containerVersion, containerId, containerPort, 'systemtest');
-
-            echo "Starting test of container ${containerName}:${containerPort}..."
-            startTests('systemtest', "http://172.17.0.4:9090", containerVersion)
-            sh "mkdir -p testresult/systemtest/suite1"
-            sh "cp -r target/surefire-reports/* testresult/systemtest/suite1"
-
-            echo "Stop ${containerId}..."
-            stopContainer(containerId);
-
-        }, 'system-tests-suite2':{
-
-            def containerPort = '9002'
-            def containerId = 'systemtest2'
-            echo "Starting ${containerName}:${containerPort}..."
-            startContainer(containerVersion, containerId, containerPort, 'systemtest');
-
-            echo "Starting test of container ${containerName}:${containerPort}..."
-            startTests('systemtest', "http://172.17.0.5:9090", containerVersion)
-            sh "mkdir -p testresult/systemtest/suite2"
-            sh "cp -r target/surefire-reports/* testresult/systemtest/suite2"
-
-            echo "Stop ${containerId}..."
-            stopContainer(containerId);
-
-        }
-        sh 'find testresult '
-        junit 'testresult/systemtest/**/TEST*.xml'
-        stash includes: "version.properties, testresult/**/*", name: "$JOB_NAME"
-
+        git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+        stash includes: "**/*", name: "all"
     }
+    parallel(
+            "system-tests-suite1": {
+                node('maven') {
+                    unstash "all"
+                    def props = readProperties file: 'version.properties'
+                    def containerVersion = props.version
+                    def containerName = getAppContainerName()
+                    def containerPort = '9001'
+                    def containerId = 'systemtest1'
+                    echo "Starting container ${containerName}:${containerPort}..."
+                    startContainer(containerVersion, containerId, containerPort, 'systemtest');
+                    echo "Starting test of container ${containerName}:${containerPort}..."
+                    runTests('systemtest', "http://172.17.0.4:9090", containerVersion, "**/systemtest/*_Suite1*");
+                    step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
+                    stopContainer('systemtest1')
+                }
+            },
+            "system-tests-suite2": {
+                node('maven') {
+                    unstash "all"
+                    def props = readProperties file: 'version.properties'
+                    def containerVersion = props.version
+                    def containerName = getAppContainerName()
+                    def containerPort = '9002'
+                    def containerId = 'systemtest2'
+                    echo "Starting ${containerName}:${containerPort}..."
+                    startContainer(containerVersion, containerId, containerPort, 'systemtest');
+                    echo "Starting test of container ${containerName}:${containerPort}..."
+                    runTests('systemtest', "http://172.17.0.5:9090", containerVersion, "**/systemtest/*_Suite2*");
+                    step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
+                    stopContainer('systemtest2')
+                }
+            }
+    )
+
 }
 
 stage('Acceptance Test') {
     node('maven') {
         echo 'Acceptance Testing...'
-        unstash "$JOB_NAME"
+        unstash "version"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
 
@@ -143,25 +137,21 @@ stage('Acceptance Test') {
         def containerId = 'acceptance1'
 
         // Start container
-        echo "Starting container ${containerName}:${containerVersion}"
-        startContainer(containerVersion, containerId, containerPort, 'acceptancetest');
-
+        echo "Starting container ${containerName}:${containerPort}"
+        startContainer(containerVersion, containerId, containerPort, 'acceptancetest')
+        sleep(5)
         // Start test
-        echo "Start tests of container ${containerName}:${containerVersion}"
-        startTests('acceptancetest', "http://172.17.0.4:9090", containerVersion)
-        sh 'find target '
-
-        echo "Stop ${getAppContainerName()}..."
+        echo "Start tests of container ${containerName}:${containerPort}"
+        runTests('acceptancetest', "http://172.17.0.4:9090", containerVersion, "**/acceptancetest/*");
+        step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
         stopContainer(containerId);
-
-        stash includes: "version.properties, target/surefire-reports/**", name: "$JOB_NAME"
     }
 }
 
 stage('Deploy to PRODUCTION') {
     node('maven') {
         echo 'Deploying to PRODUCTION...'
-        unstash "$JOB_NAME"
+        unstash "version"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
         echo "Application version: ${props.version}"
