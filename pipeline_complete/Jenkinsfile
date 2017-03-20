@@ -1,34 +1,12 @@
+
+
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
 }
 
-def startContainer(String containerVersion, String containerId, String containerPort, String profile) {
-    String containerName = getAppContainerName()
-    String alias = containerName.replace('/', '-') + "-" + containerId
-    String javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${profile}"
-    sh "docker run --rm  --name ${alias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}"
-}
-
-def stopContainer(String containerId) {
-    String containerName = getAppContainerName() + '-' + containerId
-    String alias = containerName.replace('/', '-')
-    sh "docker stop ${alias}"
-}
-
-
-def checkOutTestCode() {
-    echo 'Check-out test code...'
-    // Use pipeline parameter for Git URL
-    git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
-}
-
-def runTests(String profile, String sutUrl, String sutVersion, String testsToRun) {
-    sh "mvn clean test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
-}
-
-boolean isContainerRunning(String containerId) {
+boolean isContainerRunning(String alias) {
     def isRunning = sh(
-            script: "docker inspect --format=\"{{ .State.Running }}\" ${containerId} || exit 0",
+            script: "docker inspect --format=\"{{ .State.Running }}\" ${alias} || exit 0",
             returnStdout: true
     ).trim()
 
@@ -38,6 +16,35 @@ boolean isContainerRunning(String containerId) {
 
     return false
 }
+
+String startContainer(String containerVersion, String containerId, String containerPort, String profile) {
+    String containerName = getAppContainerName()
+    String alias = containerName.replace('/', '-') + "-" + containerId
+    String javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${profile}"
+    if (isContainerRunning(alias)) {
+        echo "Container with id ${alias} is running, stopping it..."
+        stopContainer(containerId)
+    }
+    sh "docker run --rm  --name ${alias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}"
+    def ipAddress = sh (
+            script: "docker inspect --format=\"{{ .NetworkSettings.IPAddress }}\" ${alias} || exit 0",
+            returnStdout: true
+    ).trim()
+    echo "Started ${alias} on IP: ${ipAddress}"
+    return ipAddress
+}
+
+def stopContainer(String containerId) {
+    String containerName = getAppContainerName() + '-' + containerId
+    String alias = containerName.replace('/', '-')
+    sh "docker stop ${alias}"
+}
+
+
+def runTests(String profile, String sutUrl, String sutVersion, String testsToRun) {
+    sh "mvn clean test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
+}
+
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
 stage('Build and JUnit Test') {
@@ -60,12 +67,7 @@ stage('Build and JUnit Test') {
         sh "mvn clean test "
 
         // Publish test result...
-        sh "mkdir -p testresult/junittest"
-        sh "cp target/surefire-reports/TEST*.xml testresult/junittest"
-        sh "rm -rf target/surefire-reports "
-        sh "find testresult/junittest"
-        step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
-        step([$class: 'JUnitResultArchiver', testResults: '**/testresult/junittest/TEST-*.xml'])
+        step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
 
         stash includes: "version.properties", name: "version"
     }
@@ -97,9 +99,9 @@ stage('System Test (Parallel)') {
                     def containerPort = '9001'
                     def containerId = 'systemtest1'
                     echo "Starting container ${containerName}:${containerPort}..."
-                    startContainer(containerVersion, containerId, containerPort, 'systemtest');
+                    def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
                     echo "Starting test of container ${containerName}:${containerPort}..."
-                    runTests('systemtest', "http://172.17.0.4:9090", containerVersion, "**/systemtest/*_Suite1*");
+                    runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite1*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest1')
                 }
@@ -113,9 +115,9 @@ stage('System Test (Parallel)') {
                     def containerPort = '9002'
                     def containerId = 'systemtest2'
                     echo "Starting ${containerName}:${containerPort}..."
-                    startContainer(containerVersion, containerId, containerPort, 'systemtest');
+                    def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
                     echo "Starting test of container ${containerName}:${containerPort}..."
-                    runTests('systemtest', "http://172.17.0.5:9090", containerVersion, "**/systemtest/*_Suite2*");
+                    runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite2*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest2')
                 }
@@ -138,11 +140,11 @@ stage('Acceptance Test') {
 
         // Start container
         echo "Starting container ${containerName}:${containerPort}"
-        startContainer(containerVersion, containerId, containerPort, 'acceptancetest')
+        def ipAddress = startContainer(containerVersion, containerId, containerPort, 'acceptancetest')
         sleep(5)
         // Start test
         echo "Start tests of container ${containerName}:${containerPort}"
-        runTests('acceptancetest', "http://172.17.0.4:9090", containerVersion, "**/acceptancetest/*");
+        runTests('acceptancetest', "http://${ipAddress}:9090", containerVersion, "**/acceptancetest/*");
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
         stopContainer(containerId);
     }
@@ -159,13 +161,6 @@ stage('Deploy to PRODUCTION') {
         def containerName = getAppContainerName()
         def containerPort = '9004'
         def containerId = 'production'
-        // Stop running container...
-
-        if (isContainerRunning(containerId)) {
-            // It should be... in production...
-            echo "Stopping ${containerName} for upgrade..."
-            stopContainer(containerId)
-        }
 
         echo "Starting ${containerName}..."
         startContainer(containerVersion, containerId, containerPort, 'production');
