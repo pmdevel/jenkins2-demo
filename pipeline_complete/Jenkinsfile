@@ -18,11 +18,11 @@ def stopContainer(String containerId ) {
     sh "docker stop ${alias}"
 }
 
-def startTests(String profile, String targetUrl) {
+def startTests(String profile, String sutUrl, String sutVersion) {
     echo 'Check-out test code...'
     // Use pipeline parameter for Git URL
     git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
-    sh "mvn clean test -Dspring.profiles.active=${profile} -Dwebdriver.base.url=${targetUrl}"
+    sh "mvn clean test -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
@@ -56,17 +56,18 @@ stage('System Test (Parallel)') {
         unstash "$JOB_NAME"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
-        echo "Application version: ${props.version}"
         def containerVersion = props.version
         def containerName = getAppContainerName()
-        echo "Start tests"
+
         //parallel 'system-tests-suite1':{
             // Start container
             def containerPort = '9001'
             def containerId = 'systemtest1'
-            echo "Starting ${containerName}:${containerPort}..."
+            echo "Starting container ${containerName}:${containerPort}..."
             startContainer(containerVersion, containerId, containerPort, 'systemtest');
-            startTests('systemtest', "http://172.17.0.4:9090")
+
+            echo "Starting test of container ${containerName}:${containerPort}..."
+            startTests('systemtest', "http://172.17.0.4:9090", containerVersion)
             stopContainer(containerId);
         //}, 'system-tests-suite2':{
         /*
@@ -89,17 +90,19 @@ stage('Acceptance Test') {
         unstash "$JOB_NAME"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
-        echo "Application version: ${props.version}"
-        def containerVersion = props.version
+
         def containerName = getAppContainerName()
+        def containerVersion = props.version
         def containerPort = '9003'
         def containerId = 'acceptance1'
-        // Start container
-        echo "Starting ${containerName}..."
 
+        // Start container
+        echo "Starting container ${containerName}:${containerVersion}"
         startContainer(containerVersion, containerId, containerPort, 'acceptancetest');
-        echo "Start tests"
-        startTests('acceptancetest', "http://172.17.0.4:9090")
+
+        // Start test
+        echo "Start tests of container ${containerName}:${containerVersion}"
+        startTests('acceptancetest', "http://172.17.0.4:9090", containerVersion)
 
         echo "Stop ${getAppContainerName()}..."
         stopContainer(containerId);
