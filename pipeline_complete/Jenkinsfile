@@ -18,15 +18,32 @@ def stopContainer(String containerId ) {
     sh "docker stop ${alias}"
 }
 
-def startTests(String profile, String sutUrl, String sutVersion) {
+
+def checkOutTestCode() {
     echo 'Check-out test code...'
     // Use pipeline parameter for Git URL
     git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+}
+
+def startTests(String profile, String sutUrl, String sutVersion) {
     sh "mvn clean test -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
+boolean isContainerRunning(String containerId) {
+    def isRunning = sh (
+            script: "docker inspect --format=\"{{ .State.Running }}\" ${containerId} || exit 0",
+            returnStdout: true
+    ).trim()
+
+    if ( isRunning == 'true') {
+        return true
+    }
+
+    return false
+}
+
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
-stage('Build') {
+stage('Build and JUnit Test') {
     node('maven') {
 
         echo 'Check-out code...'
@@ -46,20 +63,36 @@ stage('Build') {
         // Build application, package into docker image and push it to Docker Hub...
         // version comes with build-arg VERSION
         //sh "mvn clean package docker:build -DpushImage "
-        sh "mvn clean package docker:build "
+        sh "mvn clean test "
+        sh "find target "
+
+        // Publish test result...
+        junit 'target/surefire-reports/TEST*.xml'
+        stash includes: "version.properties, target/**/*", name: "$JOB_NAME"
+    }
+}
+
+stage ('Build Docker Container') {
+    node('maven') {
+        echo 'Junit testing...'
+        unstash "$JOB_NAME"
+        sh 'find target '
+        sh "mvn package docker:build -DskipTests"
+        stash includes: "version.properties", name: "$JOB_NAME"
     }
 }
 
 stage('System Test (Parallel)') {
     node('maven') {
-        echo 'Testing...'
+        echo 'System Testing...'
         unstash "$JOB_NAME"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
         def containerVersion = props.version
         def containerName = getAppContainerName()
+        checkOutTestCode()
 
-        //parallel 'system-tests-suite1':{
+        parallel 'system-tests-suite1':{
             // Start container
             def containerPort = '9001'
             def containerId = 'systemtest1'
@@ -68,25 +101,38 @@ stage('System Test (Parallel)') {
 
             echo "Starting test of container ${containerName}:${containerPort}..."
             startTests('systemtest', "http://172.17.0.4:9090", containerVersion)
-            stopContainer(containerId);
-        //}, 'system-tests-suite2':{
-        /*
-            def containerPort = '9002'
-            def containerId = 'suite2'
-            echo "Starting ${containerName}_part2:${containerPort}..."
-            startContainer(containerVersion, containerId, containerPort, 'systemtest');
-            startTests('systemtest', "http://172.17.0.5:9090")
-            stopContainer(containerId);
-            */
-        //}
+            sh "mkdir -p testresult/systemtest/suite1"
+            sh "cp -r target/surefire-reports/* testresult/systemtest/suite1"
 
+            echo "Stop ${containerId}..."
+            stopContainer(containerId);
+
+        }, 'system-tests-suite2':{
+
+            def containerPort = '9002'
+            def containerId = 'systemtest2'
+            echo "Starting ${containerName}:${containerPort}..."
+            startContainer(containerVersion, containerId, containerPort, 'systemtest');
+
+            echo "Starting test of container ${containerName}:${containerPort}..."
+            startTests('systemtest', "http://172.17.0.5:9090", containerVersion)
+            sh "mkdir -p testresult/systemtest/suite2"
+            sh "cp -r target/surefire-reports/* testresult/systemtest/suite2"
+
+            echo "Stop ${containerId}..."
+            stopContainer(containerId);
+
+        }
+        sh 'find testresult '
+        junit 'testresult/systemtest/**/TEST*.xml'
+        stash includes: "version.properties, testresult/**/*", name: "$JOB_NAME"
 
     }
 }
 
 stage('Acceptance Test') {
     node('maven') {
-        echo 'Testing...'
+        echo 'Acceptance Testing...'
         unstash "$JOB_NAME"
         sh 'cat version.properties'
         def props = readProperties file: 'version.properties'
@@ -103,10 +149,12 @@ stage('Acceptance Test') {
         // Start test
         echo "Start tests of container ${containerName}:${containerVersion}"
         startTests('acceptancetest', "http://172.17.0.4:9090", containerVersion)
+        sh 'find target '
 
         echo "Stop ${getAppContainerName()}..."
         stopContainer(containerId);
 
+        stash includes: "version.properties, target/surefire-reports/**", name: "$JOB_NAME"
     }
 }
 
@@ -120,10 +168,17 @@ stage('Deploy to PRODUCTION') {
         def containerVersion = props.version
         def containerName = getAppContainerName()
         def containerPort = '9004'
-        // Start container
-        echo "Starting ${containerName}..."
+        def containerId = 'production'
+        // Stop running container...
 
-        startContainer(containerVersion, 'prod', containerPort, 'production');
+        if (isContainerRunning(containerId)) {
+            // It should be... in production...
+            echo "Stopping ${containerName} for upgrade..."
+            stopContainer(containerId)
+        }
+
+        echo "Starting ${containerName}..."
+        startContainer(containerVersion, containerId, containerPort, 'production');
 
     }
 }
