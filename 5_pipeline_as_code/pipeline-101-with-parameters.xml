@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.10">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>GIT_URL_WEB_APP</name>
+          <description>Check-out URL</description>
+          <defaultValue>https://github.com/pmdevel/jenkins2-demo-source-webapp.git</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>WEB_APP_LISTEN_PORT</name>
+          <description></description>
+          <defaultValue>8888</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>WEB_APP_DEPLOYMENT_PROFILE</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>default</string>
+              <string>systemtest</string>
+              <string>acceptancetest</string>
+              <string>production</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.29">
+    <script>
+// Parameterized build of pipeline 101
+
+// Pipeline parameters
+// GIT_URL_WEB_APP: &apos;https://github.com/pmdevel/jenkins2-demo-source-webapp.git&apos;
+// WEB_APP_LISTEN_PORT: 8000 unless specified
+// WEB_APP_DEPLOYMENT_PROFILE: default unless specified (default, systemtest, acceptancetest or production)
+String gitUrlWebApp = GIT_URL_WEB_APP
+String webAppListenPort = WEB_APP_LISTEN_PORT
+String webAppDeploymentProfile = WEB_APP_DEPLOYMENT_PROFILE
+
+def abort(String errorMmessage) {
+    currentBuild.result = &apos;ABORTED&apos;
+    error(errorMessage)
+}
+
+stage (&apos;Build&apos;) {
+    node (&apos;maven&apos;) {
+        echo &quot;Building&quot;
+        // Check-out code
+        if ( gitUrlWebApp.isEmpty() ) {
+            abort(&quot;Git URL to web app is empty, aborting&quot;)
+        }
+        git credentialsId: &apos;github-pmdevel&apos;, url: gitUrlWebApp
+
+        // Let Maven help you to create a &quot;release&quot; version. Use BUILD_NUMBER from Jenkins
+        sh &apos;mvn build-helper:parse-version versions:set -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.minorVersion}.$BUILD_NUMBER versions:commit &apos;
+
+        // Get version from pom
+        def pom = readMavenPom file: &apos;pom.xml&apos;
+        writeFile file: &quot;version.properties&quot;, text: &quot;version=${pom.version}&quot;
+
+        sh &apos;cat version.properties&apos;
+        // Failure will abort with currentBuild.result: &apos;FAILURE&apos;
+        sh &quot;mvn -B clean compile &quot;
+
+        stash includes: &quot;version.properties, target/**/*&quot;, name: &quot;build&quot;
+    }
+}
+
+stage (&apos;JUnit Test&apos;) {
+    node (&apos;maven&apos;) {
+        echo &quot;Testing&quot;
+        // Do not recompile
+        unstash &quot;build&quot;
+        // Failure will abort with currentBuild.result: &apos;UNSTABLE&apos;
+        // -Dfail.junit.tests=true
+        sh &quot;mvn -B test || exit 0 &quot;
+        step([$class: &apos;JUnitResultArchiver&apos;, testResults: &apos;**/surefire-reports/TEST-*.xml&apos;])
+    }
+}
+
+stage (&apos;Dockerize&apos;) {
+    node (&apos;maven&apos;) {
+        unstash &quot;build&quot;
+        sh &quot;mvn -B package docker:build -DskipTests&quot;
+    }
+
+}
+
+stage (&apos;Deploy&apos;) {
+    node (&apos;maven&apos;) {
+        unstash &quot;build&quot;
+        def containerName = &apos;pmdevel/codenite-demo-app&apos;
+        def containerAlias = &apos;demo-app-101&apos;
+        // Get version created in previous stage (build)
+        def props = readProperties file: &apos;version.properties&apos;
+        def containerVersion = props.version
+        def containerPort = webAppListenPort
+        def javaOpts = &quot;-e JAVA_OPTS=-Dspring.profiles.active=${webAppDeploymentProfile}&quot;
+        // Stop existing container (if any), ignore bad exit code...
+        sh &quot;docker stop ${containerAlias} || exit 0&quot;
+        echo &quot;Starting ${containerName}&quot;
+        sh &quot;docker run --rm  --name ${containerAlias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}&quot;
+        echo &quot;${containerName} with alias ${containerAlias} started, listening on port ${containerPort}...&quot;
+        echo &quot;Access it on http://localhost:${containerPort}&quot;
+    }
+
+}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>

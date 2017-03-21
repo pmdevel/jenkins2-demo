@@ -2,7 +2,7 @@
 
 // Pipeline parallel
 
-stage ('Serial Stage'){
+stage('Serial Stage') {
     node('maven') {
         echo("Executing first task...")
         sleep time: 5, unit: 'SECONDS'
