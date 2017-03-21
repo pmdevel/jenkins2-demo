@@ -64,9 +64,10 @@ stage('Build and JUnit Test') {
 
         sh 'cat version.properties'
 
-        sh "mvn clean test "
+        def FAIL_JUNIT_TESTS=true
+        sh "mvn -B clean test -Dfail.junit.tests=${FAIL_JUNIT_TESTS} || exit 0"
 
-        // Publish test result...
+        // Pipeline will be aborted in state 'UNSTABLE' on failed JUnit tests
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
 
         stash includes: "version.properties", name: "version"
