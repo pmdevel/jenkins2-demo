@@ -1,0 +1,51 @@
+
+// Pipeline build result status
+
+stage ('First Stage') {
+    node ('maven') {
+        echo("In success stage")
+        currentBuild.result = 'SUCCESS'
+        echo("Status: ${currentBuild.result}")
+        sleep time: 3, unit: 'SECONDS'
+    }
+}
+
+stage ('Stage Unstable') {
+    node ('maven') {
+        echo("In unstable stage")
+        currentBuild.result = 'UNSTABLE'
+        echo("Status: ${currentBuild.result}")
+        sleep time: 5, unit: 'SECONDS'
+    }
+}
+
+/*
+stage ('Stage Failure') {
+    node ('maven') {
+        echo("In failure stage")
+        currentBuild.result = 'FAILURE'
+        echo("Status: ${currentBuild.result}")
+        sleep time: 5, unit: 'SECONDS'
+    }
+}
+*/
+
+/*
+stage ('Stage Failed') {
+    node ('maven') {
+        echo("In failure stage")
+        currentBuild.result = 'FAILURE'
+        echo("Status: ${currentBuild.result}")
+        sleep time: 5, unit: 'SECONDS'
+        sh("exit 1")
+    }
+}
+*/
+
+
+
+
+
+
+
+
