@@ -28,6 +28,7 @@ stage ('JUnit Test') {
         // Do not recompile
         unstash "build"
         // Failure will abort with currentBuild.result: 'UNSTABLE'
+        // -Dfail.junit.tests=true
         sh "mvn -B test || exit 0 "
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
     }
