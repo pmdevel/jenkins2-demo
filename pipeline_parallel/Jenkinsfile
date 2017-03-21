@@ -1,0 +1,40 @@
+#!/usr/bin/env groovy
+
+// Pipeline parallel
+
+stage ('Serial Stage'){
+    node('maven') {
+        echo("Executing first task...")
+        sleep time: 5, unit: 'SECONDS'
+        echo("First task ready!")
+    }
+    node('maven') {
+        echo("Executing second task...")
+        sleep time: 5, unit: 'SECONDS'
+        echo("Second task ready!")
+
+    }
+}
+
+stage('Parallel Stage') {
+
+    parallel(
+            "Stream ONE": {
+                node('maven') {
+                    echo("Executing first task...")
+                    sleep time: 5, unit: 'SECONDS'
+                    echo("First task ready!")
+                }
+
+            },
+            "Stream TWO": {
+                node('maven') {
+                    echo("Executing second task...")
+                    sleep time: 5, unit: 'SECONDS'
+                    echo("Second task ready!")
+                }
+
+            }
+    )
+
+}

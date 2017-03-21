@@ -1,4 +1,6 @@
+#!/usr/bin/env groovy
 
+// Pipeline complete
 
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'

@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 
 // Pipeline 101
 
@@ -15,7 +16,7 @@ stage ('Build') {
         def pom = readMavenPom file: 'pom.xml'
         writeFile file: "version.properties", text: "version=${pom.version}"
 
-        sh 'cat version.properties'
+        sh "cat version.properties"
         // Failure will abort with currentBuild.result: 'FAILURE'
         sh "mvn -B clean compile "
 
