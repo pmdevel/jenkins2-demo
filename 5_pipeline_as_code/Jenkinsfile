@@ -1,12 +1,27 @@
 
-// Pipeline 101
+// Parameterized build of pipeline 101
 
+// Pipeline parameters
+// GIT_URL_WEB_APP: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
+// WEB_APP_LISTEN_PORT: 8000 unless specified
+// WEB_APP_DEPLOYMENT_PROFILE: default unless specified (default, systemtest, acceptancetest or production)
+String gitUrlWebApp = GIT_URL_WEB_APP
+String webAppListenPort = WEB_APP_LISTEN_PORT
+String webAppDeploymentProfile = WEB_APP_DEPLOYMENT_PROFILE
+
+def abort(String errorMmessage) {
+    currentBuild.result = 'ABORTED'
+    error(errorMessage)
+}
 
 stage ('Build') {
     node ('maven') {
         echo "Building"
         // Check-out code
-        git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
+        if ( gitUrlWebApp.isEmpty() ) {
+            abort("Git URL to web app is empty, aborting")
+        }
+        git credentialsId: 'github-pmdevel', url: gitUrlWebApp
 
         // Let Maven help you to create a "release" version. Use BUILD_NUMBER from Jenkins
         sh 'mvn build-helper:parse-version versions:set -DnewVersion=\\${parsedVersion.majorVersion}.\\${parsedVersion.minorVersion}.$BUILD_NUMBER versions:commit '
@@ -44,16 +59,15 @@ stage ('Dockerize') {
 }
 
 stage ('Deploy') {
-    node('maven') {
+    node ('maven') {
         unstash "build"
         def containerName = 'pmdevel/codenite-demo-app'
         def containerAlias = 'demo-app-101'
         // Get version created in previous stage (build)
         def props = readProperties file: 'version.properties'
         def containerVersion = props.version
-        def containerPort = 8888
-        def profile = 'default'
-        def javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${profile}"
+        def containerPort = webAppListenPort
+        def javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${webAppDeploymentProfile}"
         // Stop existing container (if any), ignore bad exit code...
         sh "docker stop ${containerAlias} || exit 0"
         echo "Starting ${containerName}"

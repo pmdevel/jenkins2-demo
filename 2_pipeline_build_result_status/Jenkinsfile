@@ -31,13 +31,25 @@ stage ('Stage Failure') {
 */
 
 /*
+stage ('Stage Aborted') {
+    node ('maven') {
+        echo("In failure stage")
+        currentBuild.result = 'ABORTED'
+        echo("Status: ${currentBuild.result}")
+        sleep time: 5, unit: 'SECONDS'
+        error("Aborting...")
+    }
+}
+*/
+
+/*
 stage ('Stage Failed') {
     node ('maven') {
         echo("In failure stage")
         currentBuild.result = 'FAILURE'
         echo("Status: ${currentBuild.result}")
         sleep time: 5, unit: 'SECONDS'
-        sh("exit 1")
+        error("Faile")
     }
 }
 */

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/jenkins2-demo-pipelines.iml" filepath="$PROJECT_DIR$/.idea/jenkins2-demo-pipelines.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jenkins2-demo-pipelines.iml" filepath="$PROJECT_DIR$/jenkins2-demo-pipelines.iml" />
     </modules>
   </component>
 </project>
