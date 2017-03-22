@@ -2,6 +2,13 @@
 
 // Pipeline complete
 
+// Pipeline parameters
+// GIT_URL_WEB_APP: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
+// GIT_URL_WEB_APP_TEST: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+
+String gitUrlWebApp = GIT_URL_WEB_APP
+String gitUrlWebAppTest = GIT_URL_WEB_APP_TEST
+
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
 }
@@ -47,14 +54,26 @@ def runTests(String profile, String sutUrl, String sutVersion, String testsToRun
     sh "mvn clean test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
+def abort(String errorMessage) {
+        currentBuild.result = 'ABORTED'
+        error(errorMessage)
+}
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
 stage('Build and JUnit Test') {
     node('maven') {
 
+        if ( gitUrlWebApp.isEmpty() ) {
+            abort("Git URL to web app project is empty, aborting")
+        }
+
+        if ( gitUrlWebAppTest.isEmpty() ) {
+            abort("Git URL to web app test project is empty, aborting")
+        }
+
         echo 'Check-out code...'
         // Use pipeline parameter for Git URL
-        git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
+        git credentialsId: 'github-pmdevel', url: gitUrlWebApp
         echo 'Building...'
 
         // Let Maven help you to create a "release" version. Use BUILD_NUMBER from Jenkins
@@ -66,8 +85,7 @@ stage('Build and JUnit Test') {
 
         sh 'cat version.properties'
 
-        def FAIL_JUNIT_TESTS=true
-        sh "mvn -B clean test -Dfail.junit.tests=${FAIL_JUNIT_TESTS} || exit 0"
+        sh "mvn -B clean test || exit 0"
 
         // Pipeline will be aborted in state 'UNSTABLE' on failed JUnit tests
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
@@ -89,7 +107,7 @@ stage('Build Docker Container') {
 stage('System Test (Parallel)') {
 
     node('maven') {
-        git credentialsId: 'github-pmdevel', url: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+        git credentialsId: 'github-pmdevel', url: gitUrlWebAppTest
         stash includes: "**/*", name: "all"
     }
     parallel(
