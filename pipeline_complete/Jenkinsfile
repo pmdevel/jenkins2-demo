@@ -114,7 +114,7 @@ stage('Build and JUnit Test') {
 
         sh 'cat version.properties'
 
-        sh "mvn -B clean parameter_test || exit 0"
+        sh "mvn -B clean test || exit 0"
 
         // Pipeline will be aborted in state 'UNSTABLE' on failed JUnit tests
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
@@ -150,7 +150,7 @@ stage('System Test (Parallel)') {
                     def containerId = 'systemtest1'
                     echo "Starting container ${containerName}:${containerPort}..."
                     def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
-                    echo "Starting parameter_test of container ${containerName}:${containerPort}..."
+                    echo "Starting test of container ${containerName}:${containerPort}..."
                     runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite1*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest1')
@@ -166,7 +166,7 @@ stage('System Test (Parallel)') {
                     def containerId = 'systemtest2'
                     echo "Starting ${containerName}:${containerPort}..."
                     def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
-                    echo "Starting parameter_test of container ${containerName}:${containerPort}..."
+                    echo "Starting test of container ${containerName}:${containerPort}..."
                     runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite2*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest2')
@@ -192,7 +192,7 @@ stage('Acceptance Test') {
         echo "Starting container ${containerName}:${containerPort}"
         def ipAddress = startContainer(containerVersion, containerId, containerPort, 'acceptancetest')
         sleep(5)
-        // Start parameter_test
+        // Start test
         echo "Start tests of container ${containerName}:${containerPort}"
         runTests('acceptancetest', "http://${ipAddress}:9090", containerVersion, "**/acceptancetest/*");
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
