@@ -21,6 +21,7 @@ stage ('Build') {
         sh "mvn -B clean compile "
 
         stash includes: "version.properties, target/**/*", name: "build"
+
     }
 }
 

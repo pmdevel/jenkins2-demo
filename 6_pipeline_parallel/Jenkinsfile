@@ -10,8 +10,14 @@ stage('Serial Stage') {
     }
     node('maven') {
         echo("Executing second task...")
-        sleep time: 5, unit: 'SECONDS'
+        sleep time: 4, unit: 'SECONDS'
         echo("Second task ready!")
+
+    }
+    node('maven') {
+        echo("Executing third task...")
+        sleep time: 3, unit: 'SECONDS'
+        echo("Third task ready!")
 
     }
 }
@@ -21,6 +27,7 @@ stage('Parallel Stage') {
     parallel(
             "Stream ONE": {
                 node('maven') {
+
                     echo("Executing first task...")
                     sleep time: 5, unit: 'SECONDS'
                     echo("First task ready!")
@@ -30,8 +37,16 @@ stage('Parallel Stage') {
             "Stream TWO": {
                 node('maven') {
                     echo("Executing second task...")
-                    sleep time: 5, unit: 'SECONDS'
+                    sleep time: 4, unit: 'SECONDS'
                     echo("Second task ready!")
+                }
+
+            },
+            "Stream THREE": {
+                node('maven') {
+                    echo("Executing third task...")
+                    sleep time: 3, unit: 'SECONDS'
+                    echo("Third task ready!")
                 }
 
             }
