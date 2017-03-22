@@ -192,7 +192,8 @@ stage('Acceptance Test') {
 
 stage('Deploy in PRODUCTION') {
 
-    if ( automaticDeployInProcuction == false) {
+    echo "Automatic deploy in production: ${automaticDeployInProcuction}"
+    if ( automaticDeployInProcuction == 'false') {
         waitForManualApproval("Do you want to deploy in PROCTION", "Deploy", 30, 'SECONDS')
     }
 
