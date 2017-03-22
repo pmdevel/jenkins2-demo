@@ -7,25 +7,14 @@
 // GIT_URL_WEB_APP_TEST: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
 // AUTOMATIC_DEPLOY_IN_PRODUCTION: false
 
-def gitUrlWebApp
-def gitUrlWebAppTest
-def automaticDeployInProduction
-
 // Check input parameters before build
-def handleBuildParameters() {
+def echoBuildParameters() {
     echo "================================================="
     echo "Starting pipeline with parameters:"
     echo "GIT_URL_WEB_APP=${GIT_URL_WEB_APP}"
-    echo "WEB_APP_LISTEN_PORT=${WEB_APP_LISTEN_PORT}"
-    echo "WEB_APP_DEPLOYMENT_PROFILE=${WEB_APP_DEPLOYMENT_PROFILE}"
-    echo "SKIP_DEPLOY=${SKIP_DEPLOY}"
+    echo "GIT_URL_WEB_APP=${GIT_URL_WEB_APP_TEST}"
+    echo "AUTOMATIC_DEPLOY_IN_PRODUCTION=${AUTOMATIC_DEPLOY_IN_PRODUCTION}"
     echo "================================================="
-
-    gitUrlWebApp = GIT_URL_WEB_APP
-    gitUrlWebAppTest = GIT_URL_WEB_APP_TEST
-// OBS! OBS! OBS!
-    automaticDeployInProduction = AUTOMATIC_DEPLOY_IN_PRODUCTION.toBoolean()
-
 
 }
 
@@ -103,17 +92,17 @@ stage('Build and JUnit Test') {
 
         handleBuildParameters()
 
-        if (gitUrlWebApp.isEmpty()) {
+        if (GIT_URL_WEB_APP.isEmpty()) {
             abort("Git URL to web app project is empty, aborting")
         }
 
-        if (gitUrlWebAppTest.isEmpty()) {
-            abort("Git URL to web app parameter_test project is empty, aborting")
+        if (GIT_URL_WEB_APP_TEST.isEmpty()) {
+            abort("Git URL to web app test project is empty, aborting")
         }
 
         echo 'Check-out code...'
         // Use pipeline parameter for Git URL
-        git credentialsId: 'github-pmdevel', url: gitUrlWebApp
+        git credentialsId: 'github-pmdevel', url: GIT_URL_WEB_APP
         echo 'Building...'
 
         // Let Maven help you to create a "release" version. Use BUILD_NUMBER from Jenkins
@@ -147,7 +136,7 @@ stage('Build Docker Container') {
 stage('System Test (Parallel)') {
 
     node('maven') {
-        git credentialsId: 'github-pmdevel', url: gitUrlWebAppTest
+        git credentialsId: 'github-pmdevel', url: GIT_URL_WEB_APP_TEST
         stash includes: "**/*", name: "all"
     }
     parallel(
@@ -213,8 +202,8 @@ stage('Acceptance Test') {
 
 stage('Deploy in PRODUCTION') {
 
-    echo "Automatic deploy in production: ${automaticDeployInProcuction}"
-    if ( ! automaticDeployInProcuction ) {
+    echo "Automatic deploy in production: ${}"
+    if ( ! AUTOMATIC_DEPLOY_IN_PRODUCTION.toBoolean() ) {
         waitForManualApproval("Do you want to deploy in PROCTION", "Deploy", 30, 'SECONDS')
     }
 
