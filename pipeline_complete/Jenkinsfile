@@ -40,7 +40,7 @@ def waitForManualApproval(def messageText, def buttonText, def time, def unit) {
     return userInput
 }
 
-boolean isContainerRunning(String alias) {
+def isContainerRunning(String alias) {
     def isRunning = sh(
             script: "docker inspect --format=\"{{ .State.Running }}\" ${alias} || exit 0",
             returnStdout: true
@@ -53,7 +53,7 @@ boolean isContainerRunning(String alias) {
     return false
 }
 
-String startContainer(String containerVersion, String containerId, String containerPort, String profile) {
+def startContainer(String containerVersion, String containerId, String containerPort, String profile) {
     String containerName = getAppContainerName()
     String alias = containerName.replace('/', '-') + "-" + containerId
     String javaOpts = "-e JAVA_OPTS=-Dspring.profiles.active=${profile}"
@@ -84,6 +84,10 @@ def runTests(String profile, String sutUrl, String sutVersion, String testsToRun
 def abort(String errorMessage) {
     currentBuild.result = 'ABORTED'
     error(errorMessage)
+}
+
+def isBuildUnstable() {
+    return currentBuild.result == 'UNSTABLE'
 }
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
@@ -125,6 +129,7 @@ stage('Build and JUnit Test') {
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
 
         stash includes: "version.properties", name: "version"
+
     }
 }
 
@@ -132,7 +137,6 @@ stage('Build Docker Container') {
     node('maven') {
         echo 'Junit testing...'
         unstash "version"
-
         //sh "mvn package docker:build -DpushImage "
         sh "mvn package docker:build -DskipTests"
     }
@@ -178,6 +182,10 @@ stage('System Test (Parallel)') {
                 }
             }
     )
+    if (isBuildUnstable() ) {
+        // Do not continue if UNSTABLE
+        return
+    }
 
 }
 
