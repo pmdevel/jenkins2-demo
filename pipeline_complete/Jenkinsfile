@@ -5,12 +5,31 @@
 // Pipeline parameters
 // GIT_URL_WEB_APP: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
 // GIT_URL_WEB_APP_TEST: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
+// AUTOMATIC_DEPLOY_IN_PRODUCTION: false
 
 String gitUrlWebApp = GIT_URL_WEB_APP
 String gitUrlWebAppTest = GIT_URL_WEB_APP_TEST
+boolean automaticDeployInProcuction = AUTOMATIC_DEPLOY_IN_PRODUCTION
 
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
+}
+
+def waitForManualApproval(def messageText, def buttonText, def time, def unit) {
+    def userInput = ""
+
+    try {
+        timeout(time: time, unit: unit) {
+            userInput = input(
+                    id: 'deploymentConfirmation', vale: 'continue', message: messageText, ok: buttonText,
+                    submitter: 'jenkins', submitterParameter: 'deploymentApprovedBy'
+            )
+        }
+    } finally {
+        echo ("User input: ${userInput}")
+    }
+
+    return userInput
 }
 
 boolean isContainerRunning(String alias) {
@@ -35,7 +54,7 @@ String startContainer(String containerVersion, String containerId, String contai
         stopContainer(containerId)
     }
     sh "docker run --rm  --name ${alias} -d -p ${containerPort}:9090 ${javaOpts} ${containerName}:${containerVersion}"
-    def ipAddress = sh (
+    def ipAddress = sh(
             script: "docker inspect --format=\"{{ .NetworkSettings.IPAddress }}\" ${alias} || exit 0",
             returnStdout: true
     ).trim()
@@ -55,19 +74,19 @@ def runTests(String profile, String sutUrl, String sutVersion, String testsToRun
 }
 
 def abort(String errorMessage) {
-        currentBuild.result = 'ABORTED'
-        error(errorMessage)
+    currentBuild.result = 'ABORTED'
+    error(errorMessage)
 }
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
 stage('Build and JUnit Test') {
     node('maven') {
 
-        if ( gitUrlWebApp.isEmpty() ) {
+        if (gitUrlWebApp.isEmpty()) {
             abort("Git URL to web app project is empty, aborting")
         }
 
-        if ( gitUrlWebAppTest.isEmpty() ) {
+        if (gitUrlWebAppTest.isEmpty()) {
             abort("Git URL to web app test project is empty, aborting")
         }
 
@@ -171,7 +190,12 @@ stage('Acceptance Test') {
     }
 }
 
-stage('Deploy to PRODUCTION') {
+stage('Deploy in PRODUCTION') {
+
+    if ( automaticDeployInProcuction == false) {
+        waitForManualApproval("Do you want to deploy in PROCTION", "Deploy", 30, 'SECONDS')
+    }
+
     node('maven') {
         echo 'Deploying to PRODUCTION...'
         unstash "version"
