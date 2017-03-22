@@ -77,7 +77,7 @@ def stopContainer(String containerId) {
 
 
 def runTests(String profile, String sutUrl, String sutVersion, String testsToRun) {
-    sh "mvn clean parameter_test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
+    sh "mvn clean -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
 def abort(String errorMessage) {
