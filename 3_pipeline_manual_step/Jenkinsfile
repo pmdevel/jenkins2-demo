@@ -2,20 +2,13 @@
 
 // Pipeline manual step
 
-stage ('Stage One') {
-    node ('maven') {
-        echo "In first stage"
-    }
-}
-
-stage ('Stage await Manual Confirmation') {
-
+def waitForManualApproval(def messageText, def buttonText) {
     def userInput = ""
 
     try {
         timeout(time: 30, unit: 'SECONDS') {
             userInput = input(
-                    id: 'deploymentConfirmation', vale: 'continue', message: 'Continue to Deployment?', ok: 'Deploy',
+                    id: 'deploymentConfirmation', vale: 'continue', message: messageText, ok: buttonText,
                     submitter: 'jenkins', submitterParameter: 'deploymentApprovedBy'
             )
         }
@@ -23,9 +16,20 @@ stage ('Stage await Manual Confirmation') {
         echo ("User input: ${userInput}")
     }
 
+    return userInput
 }
 
+
+stage ('Stage One') {
+    node ('maven') {
+        echo "In first stage"
+    }
+}
+
+
 stage ('Deploy to PRODUCTION') {
+
+    waitForManualApproval("Deploy in PRODUCTION?", "Deploy")
 
     node ('maven') {
 
