@@ -90,7 +90,7 @@ def abort(String errorMessage) {
 stage('Build and JUnit Test') {
     node('maven') {
 
-        handleBuildParameters()
+        echoBuildParameters()
 
         if (GIT_URL_WEB_APP.isEmpty()) {
             abort("Git URL to web app project is empty, aborting")
