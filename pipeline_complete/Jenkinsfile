@@ -184,9 +184,7 @@ stage('System Test (Parallel)') {
     )
     if (isBuildUnstable() ) {
         // Do not continue if UNSTABLE
-        echo "Build is UNSTABLE, aborting..."
-        echo "currentBuild.result: ${currentBuild.result}"
-        return
+        abort("Build is UNSTABLE, aborting...")
     }
 
 }
