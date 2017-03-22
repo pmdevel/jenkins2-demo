@@ -1,0 +1,10 @@
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ list-jobs
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ delete-job JOB_NAME
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ get-job JOB_NAME > CONFIGURATION_FILE
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ create-job JOB_NAME < CONFIGURATION_FILE
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ build JOB_NAME < CONFIGURATION_FILE

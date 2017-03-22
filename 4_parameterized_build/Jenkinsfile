@@ -1,7 +1,8 @@
 #!/usr/bin/env groovy
 
 // Parameterized build of pipeline 101
-// Pipeline parameters
+
+// Pipeline parameters:
 // GIT_URL_WEB_APP: 'https://github.com/pmdevel/jenkins2-demo-source-webapp.git'
 // WEB_APP_LISTEN_PORT: 8000 unless specified
 // WEB_APP_DEPLOYMENT_PROFILE: default unless specified (default, systemtest, acceptancetest or production)

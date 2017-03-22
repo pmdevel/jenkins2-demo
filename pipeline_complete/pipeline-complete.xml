@@ -16,6 +16,16 @@
           <description></description>
           <defaultValue>https://github.com/pmdevel/jenkins2-demo-source-webtest.git</defaultValue>
         </hudson.model.StringParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>AUTOMATIC_DEPLOY_IN_PRODUCTION</name>
+          <description>Deploy automatically in PRODUCTION (no manual confirmation)</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>FORCE_FAIL_JUNIT_TESTS</name>
+          <description>Force fail JUnit tests via parameter -Dfail.junit.tests=true</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
     <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
