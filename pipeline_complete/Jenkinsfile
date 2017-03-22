@@ -7,9 +7,27 @@
 // GIT_URL_WEB_APP_TEST: 'https://github.com/pmdevel/jenkins2-demo-source-webtest.git'
 // AUTOMATIC_DEPLOY_IN_PRODUCTION: false
 
-String gitUrlWebApp = GIT_URL_WEB_APP
-String gitUrlWebAppTest = GIT_URL_WEB_APP_TEST
-boolean automaticDeployInProcuction = AUTOMATIC_DEPLOY_IN_PRODUCTION
+def gitUrlWebApp
+def gitUrlWebAppTest
+def automaticDeployInProduction
+
+// Check input parameters before build
+def handleBuildParameters() {
+    echo "================================================="
+    echo "Starting pipeline with parameters:"
+    echo "GIT_URL_WEB_APP=${GIT_URL_WEB_APP}"
+    echo "WEB_APP_LISTEN_PORT=${WEB_APP_LISTEN_PORT}"
+    echo "WEB_APP_DEPLOYMENT_PROFILE=${WEB_APP_DEPLOYMENT_PROFILE}"
+    echo "SKIP_DEPLOY=${SKIP_DEPLOY}"
+    echo "================================================="
+
+    gitUrlWebApp = GIT_URL_WEB_APP
+    gitUrlWebAppTest = GIT_URL_WEB_APP_TEST
+// OBS! OBS! OBS!
+    automaticDeployInProduction = AUTOMATIC_DEPLOY_IN_PRODUCTION.toBoolean()
+
+
+}
 
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
@@ -70,7 +88,7 @@ def stopContainer(String containerId) {
 
 
 def runTests(String profile, String sutUrl, String sutVersion, String testsToRun) {
-    sh "mvn clean test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
+    sh "mvn clean parameter_test -Dtest=${testsToRun} -Dspring.profiles.active=${profile} -Dsut.url=${sutUrl} -Dsut.version=${sutVersion}"
 }
 
 def abort(String errorMessage) {
@@ -79,15 +97,18 @@ def abort(String errorMessage) {
 }
 
 //<<<<<<<<<<<<<<<<<<<<<<<< PIPELINE START >>>>>>>>>>>>>>>>>>>>>>>>
+
 stage('Build and JUnit Test') {
     node('maven') {
+
+        handleBuildParameters()
 
         if (gitUrlWebApp.isEmpty()) {
             abort("Git URL to web app project is empty, aborting")
         }
 
         if (gitUrlWebAppTest.isEmpty()) {
-            abort("Git URL to web app test project is empty, aborting")
+            abort("Git URL to web app parameter_test project is empty, aborting")
         }
 
         echo 'Check-out code...'
@@ -104,7 +125,7 @@ stage('Build and JUnit Test') {
 
         sh 'cat version.properties'
 
-        sh "mvn -B clean test || exit 0"
+        sh "mvn -B clean parameter_test || exit 0"
 
         // Pipeline will be aborted in state 'UNSTABLE' on failed JUnit tests
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
@@ -140,7 +161,7 @@ stage('System Test (Parallel)') {
                     def containerId = 'systemtest1'
                     echo "Starting container ${containerName}:${containerPort}..."
                     def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
-                    echo "Starting test of container ${containerName}:${containerPort}..."
+                    echo "Starting parameter_test of container ${containerName}:${containerPort}..."
                     runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite1*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest1')
@@ -156,7 +177,7 @@ stage('System Test (Parallel)') {
                     def containerId = 'systemtest2'
                     echo "Starting ${containerName}:${containerPort}..."
                     def ipAddress = startContainer(containerVersion, containerId, containerPort, 'systemtest');
-                    echo "Starting test of container ${containerName}:${containerPort}..."
+                    echo "Starting parameter_test of container ${containerName}:${containerPort}..."
                     runTests('systemtest', "http://${ipAddress}:9090", containerVersion, "**/systemtest/*_Suite2*");
                     step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
                     stopContainer('systemtest2')
@@ -182,7 +203,7 @@ stage('Acceptance Test') {
         echo "Starting container ${containerName}:${containerPort}"
         def ipAddress = startContainer(containerVersion, containerId, containerPort, 'acceptancetest')
         sleep(5)
-        // Start test
+        // Start parameter_test
         echo "Start tests of container ${containerName}:${containerPort}"
         runTests('acceptancetest', "http://${ipAddress}:9090", containerVersion, "**/acceptancetest/*");
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
@@ -193,7 +214,7 @@ stage('Acceptance Test') {
 stage('Deploy in PRODUCTION') {
 
     echo "Automatic deploy in production: ${automaticDeployInProcuction}"
-    if ( automaticDeployInProcuction == 'false') {
+    if ( ! automaticDeployInProcuction ) {
         waitForManualApproval("Do you want to deploy in PROCTION", "Deploy", 30, 'SECONDS')
     }
 
