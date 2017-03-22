@@ -14,6 +14,7 @@ def echoBuildParameters() {
     echo "GIT_URL_WEB_APP=${GIT_URL_WEB_APP}"
     echo "GIT_URL_WEB_APP=${GIT_URL_WEB_APP_TEST}"
     echo "AUTOMATIC_DEPLOY_IN_PRODUCTION=${AUTOMATIC_DEPLOY_IN_PRODUCTION}"
+    echo "FORCE_FAIL_JUNIT_TESTS=${FORCE_FAIL_JUNIT_TESTS}"
     echo "================================================="
 
 }
@@ -114,7 +115,11 @@ stage('Build and JUnit Test') {
 
         sh 'cat version.properties'
 
-        sh "mvn -B clean test || exit 0"
+        def forceFailJunitTests = ""
+        if ( FORCE_FAIL_JUNIT_TESTS.toBoolean() ) {
+            forceFailJunitTests="-Dfail.junit.tests=true"
+        }
+        sh "mvn -B clean test ${forceFailJunitTests} || exit 0"
 
         // Pipeline will be aborted in state 'UNSTABLE' on failed JUnit tests
         step([$class: 'JUnitResultArchiver', testResults: '**/surefire-reports/TEST-*.xml'])
