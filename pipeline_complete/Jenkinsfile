@@ -84,13 +84,11 @@ def runTests(String profile, String sutUrl, String sutVersion, String testsToRun
 def abort(String errorMessage) {
     currentBuild.result = 'ABORTED'
     error(errorMessage)
-    throw new Exception(errorMessage)
 }
 
 def abortUnstable(String errorMessage) {
     currentBuild.result = 'UNSTABLE'
     error(errorMessage)
-    throw new Exception(errorMessage)
 }
 
 def isBuildUnstable() {
