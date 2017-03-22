@@ -1,19 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="65b82b85-986b-42c6-8a28-43f33fbf6594" name="Default" comment="Exit on unstable build">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/4_parameterized_build/parameter_test.groovy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/5_pipeline_as_code/commands.txt" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/pipeline_complete/pipeline-complete.xml" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/5_pipeline_as_code/Jenkinsfile" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/5_pipeline_as_code/pipeline-101-with-parameters.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pipeline_complete/pipeline-complete-1.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/test.groovy" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/main/groovy/pipeline.gdsl" afterPath="$PROJECT_DIR$/src/pipeline.gdsl" />
+    <list default="true" id="65b82b85-986b-42c6-8a28-43f33fbf6594" name="Default" comment="">
+      <change type="MOVED" beforePath="$PROJECT_DIR$/pipeline_complete/getPipeline.sh" afterPath="$PROJECT_DIR$/pipeline_complete/getPipelineDescription.sh" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/4_parameterized_build/Jenkinsfile" afterPath="$PROJECT_DIR$/4_parameterized_build/Jenkinsfile" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/jenkins2-demo-pipelines.iml" afterPath="$PROJECT_DIR$/jenkins2-demo-pipelines.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pipeline_complete/createPipeline.sh" afterPath="$PROJECT_DIR$/pipeline_complete/createPipeline.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pipeline_complete/pipeline-complete.xml" afterPath="$PROJECT_DIR$/pipeline_complete/pipeline-complete.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -39,11 +30,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Jenkinsfile" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Jenkinsfile" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pipeline_complete/Jenkinsfile">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="539">
-              <caret line="225" column="5" lean-forward="true" selection-start-line="225" selection-start-column="5" selection-end-line="225" selection-end-column="5" />
+            <state relative-caret-position="-503">
+              <caret line="167" column="34" lean-forward="true" selection-start-line="167" selection-start-column="34" selection-end-line="167" selection-end-column="34" />
               <folding />
             </state>
           </provider>
@@ -69,7 +60,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Jenkinsfile" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Jenkinsfile" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/2_pipeline_build_result_status/Jenkinsfile">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="390">
@@ -122,10 +113,12 @@
       <file leaf-file-name="workspace.xml" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7260">
-              <caret line="484" column="16" lean-forward="false" selection-start-line="484" selection-start-column="16" selection-end-line="484" selection-end-column="16" />
+            <state relative-caret-position="7155">
+              <caret line="477" column="16" lean-forward="false" selection-start-line="477" selection-start-column="16" selection-end-line="477" selection-end-column="16" />
               <folding>
-                <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+                <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+                <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+                <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
               </folding>
             </state>
           </provider>
@@ -693,7 +686,14 @@
       <option name="project" value="LOCAL" />
       <updated>1490213746384</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Clean up">
+      <created>1490219964069</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1490219964069</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -709,12 +709,12 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32912722" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32912722" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32912722" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2628205" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2628205" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -741,7 +741,8 @@
     <MESSAGE value="Use function for input handling" />
     <MESSAGE value="No global variables" />
     <MESSAGE value="Exit on unstable build" />
-    <option name="LAST_COMMIT_MESSAGE" value="Exit on unstable build" />
+    <MESSAGE value="Clean up" />
+    <option name="LAST_COMMIT_MESSAGE" value="Clean up" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -757,7 +758,9 @@
         <state relative-caret-position="7275">
           <caret line="485" column="16" lean-forward="false" selection-start-line="485" selection-start-column="16" selection-end-line="485" selection-end-column="16" />
           <folding>
-            <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
           </folding>
         </state>
       </provider>
@@ -830,7 +833,9 @@
         <state relative-caret-position="7230">
           <caret line="482" column="16" lean-forward="false" selection-start-line="482" selection-start-column="16" selection-end-line="482" selection-end-column="16" />
           <folding>
-            <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
           </folding>
         </state>
       </provider>
@@ -911,7 +916,9 @@
         <state relative-caret-position="7005">
           <caret line="467" column="16" lean-forward="false" selection-start-line="467" selection-start-column="16" selection-end-line="467" selection-end-column="16" />
           <folding>
-            <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
           </folding>
         </state>
       </provider>
@@ -985,7 +992,9 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
           </folding>
         </state>
       </provider>
@@ -1061,10 +1070,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7260">
-          <caret line="484" column="16" lean-forward="false" selection-start-line="484" selection-start-column="16" selection-end-line="484" selection-end-column="16" />
+        <state relative-caret-position="7155">
+          <caret line="477" column="16" lean-forward="false" selection-start-line="477" selection-start-column="16" selection-end-line="477" selection-end-column="16" />
           <folding>
-            <marker date="1490219861239" expanded="true" signature="60990:61032" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61455" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61473" ph="..." />
+            <marker date="1490222383861" expanded="true" signature="61413:61486" ph="..." />
           </folding>
         </state>
       </provider>
@@ -1101,14 +1112,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pipeline_complete/Jenkinsfile">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="539">
-          <caret line="225" column="5" lean-forward="true" selection-start-line="225" selection-start-column="5" selection-end-line="225" selection-end-column="5" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/4_parameterized_build/parameter_test.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
@@ -1129,6 +1132,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="390">
           <caret line="26" column="39" lean-forward="false" selection-start-line="26" selection-start-column="39" selection-end-line="26" selection-end-column="39" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pipeline_complete/Jenkinsfile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-503">
+          <caret line="167" column="34" lean-forward="true" selection-start-line="167" selection-start-column="34" selection-end-line="167" selection-end-column="34" />
           <folding />
         </state>
       </provider>
