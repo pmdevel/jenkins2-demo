@@ -19,6 +19,19 @@ def echoBuildParameters() {
 
 }
 
+@NonCPS
+def setDisplay(String displayName, String description) {
+    def build = currentBuild.rawBuild
+    // rawBuild returns a Run object
+    // http://javadoc.jenkins-ci.org/hudson/model/Run.html
+    // With a lot off Juicy stuff :-)
+    build.displayName = "#${build.number}, ${displayName}"
+    if (description != null && !description.isEmpty()) {
+        build.description = description
+    }
+
+}
+
 def getAppContainerName() {
     return 'pmdevel/codenite-demo-app'
 }
@@ -33,9 +46,14 @@ def waitForManualApproval(def messageText, def buttonText, def time, def unit) {
                     submitter: 'jenkins', submitterParameter: 'deploymentApprovedBy'
             )
         }
+    } catch (err) {
+        echo ("Error: ${fie}")
+        setDisplay("Deploy Aborted", null)
+        throw err
     } finally {
         echo ("User input: ${userInput}")
     }
+    setDisplay("Deploy Aborted", "Confirmed by: ${userInput}")
 
     return userInput
 }
