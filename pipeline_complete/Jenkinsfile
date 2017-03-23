@@ -257,6 +257,8 @@ stage('Deploy in PRODUCTION') {
 
         echo "Starting ${containerName}..."
         startContainer(containerVersion, containerId, containerPort, 'production');
-
+        if ( AUTOMATIC_DEPLOY_IN_PRODUCTION.toBoolean() ) {
+            setDisplay("Deployed automatically to PRODUCTION", null)
+        }
     }
 }
