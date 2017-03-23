@@ -25,6 +25,7 @@ def setDisplay(String displayName, String description) {
     // rawBuild returns a Run object
     // http://javadoc.jenkins-ci.org/hudson/model/Run.html
     // With a lot off Juicy stuff :-)
+    // Get build.number requires In-process Script Approval
     build.displayName = "#${build.number}, ${displayName}"
     if (description != null && !description.isEmpty()) {
         build.description = description
@@ -48,12 +49,12 @@ def waitForManualApproval(def messageText, def buttonText, def time, def unit) {
         }
     } catch (err) {
         echo ("Error: ${err}")
-        setDisplay("Deploy Aborted", null)
+        setDisplay("Deploy to PRODUCTION Aborted", null)
         throw err
     } finally {
         echo ("User input: ${userInput}")
     }
-    setDisplay("Deploy Aborted", "Confirmed by: ${userInput}")
+    setDisplay("Deploy to PRODUCTION Confirmed", "By user: ${userInput}")
 
     return userInput
 }
