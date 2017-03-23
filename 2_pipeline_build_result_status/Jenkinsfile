@@ -4,41 +4,61 @@
 
 stage ('First Stage') {
     node ('maven') {
-        echo("In success stage")
-        currentBuild.result = 'SUCCESS'
+        echo("In 'First Stage'")
         echo("Status: ${currentBuild.result}")
-        sleep time: 3, unit: 'SECONDS'
+        sleep time: 2, unit: 'SECONDS'
     }
 }
 
-stage ('Stage Unstable') {
+stage ('Second Stage') {
     node ('maven') {
-        echo("In unstable stage")
-        currentBuild.result = 'UNSTABLE'
+        echo("In 'Second Stage'")
         echo("Status: ${currentBuild.result}")
-        sleep time: 5, unit: 'SECONDS'
+        sleep time: 2, unit: 'SECONDS'
     }
 }
 
 /*
-stage ('Stage Failure') {
+stage ('Stage Unstable') {
     node ('maven') {
-        echo("In failure stage")
-        currentBuild.result = 'FAILURE'
+        echo("In 'Stage Unstable'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Setting status: 'UNSTABLE'")
+        currentBuild.result = 'UNSTABLE'
         echo("Status: ${currentBuild.result}")
-        sleep time: 5, unit: 'SECONDS'
+
     }
 }
 */
 
 /*
-stage ('Stage Aborted') {
+stage ('Stage Successful Again') {
     node ('maven') {
-        echo("In failure stage")
-        currentBuild.result = 'ABORTED'
+        echo("In 'Stage Successful Again'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Setting status: 'SUCCESSFUL'")
+        currentBuild.result = 'SUCCESSFUL'
         echo("Status: ${currentBuild.result}")
-        sleep time: 5, unit: 'SECONDS'
-        error("Aborting...")
+
+    }
+}*/
+
+/*
+stage ('Stage Failure') {
+    node ('maven') {
+        echo("In 'Stage Failure'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Setting status: 'FAILURE'")
+        currentBuild.result = 'FAILURE'
+        echo("Status: ${currentBuild.result}")
+    }
+}
+
+stage ('Stage Continue after Failure') {
+    node ('maven') {
+        echo("In 'Stage Continue after Failure'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Status: ${currentBuild.result}")
     }
 }
 */
@@ -46,14 +66,38 @@ stage ('Stage Aborted') {
 /*
 stage ('Stage Failed') {
     node ('maven') {
-        echo("In failure stage")
+        echo("In 'Stage Failed'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Setting status: 'FAILURE'")
         currentBuild.result = 'FAILURE'
         echo("Status: ${currentBuild.result}")
-        sleep time: 5, unit: 'SECONDS'
-        error("Faile")
+        // This exits Pipeline
+        error("Fail")
+    }
+}
+
+stage ('Stage Continue after Failed') {
+    node ('maven') {
+        echo("In 'Stage Continue after Failed'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Status: ${currentBuild.result}")
     }
 }
 */
+
+/*
+stage ('Stage Aborted') {
+    node ('maven') {
+        echo("In 'Stage Aborted'")
+        sleep time: 4, unit: 'SECONDS'
+        echo("Setting status: 'ABORTED'")
+        currentBuild.result = 'ABORTED'
+        echo("Status: ${currentBuild.result}")
+        error("Aborting...")
+    }
+}
+*/
+
 
 
 
