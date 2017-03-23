@@ -47,7 +47,7 @@ def waitForManualApproval(def messageText, def buttonText, def time, def unit) {
             )
         }
     } catch (err) {
-        echo ("Error: ${fie}")
+        echo ("Error: ${err}")
         setDisplay("Deploy Aborted", null)
         throw err
     } finally {
