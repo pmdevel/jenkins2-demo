@@ -2,6 +2,19 @@
 
 // Pipeline manual step
 
+@NonCPS
+def setDisplay(String displayName, String description) {
+    def build = currentBuild.rawBuild
+    // rawBuild returns a Run object
+    // http://javadoc.jenkins-ci.org/hudson/model/Run.html
+    // With a lot off Juicy stuff :-)
+    build.displayName = "#${build.number}, ${displayName}"
+    if (description != null && !description.isEmpty()) {
+        build.description = description
+    }
+
+}
+
 def waitForManualApproval(def messageText, def buttonText) {
     def userInput = ""
 
@@ -12,9 +25,14 @@ def waitForManualApproval(def messageText, def buttonText) {
                     submitter: 'jenkins', submitterParameter: 'deploymentApprovedBy'
             )
         }
+    } catch (fie) {
+        echo ("Error: ${fie}")
+        setDisplay("Deploy Aborted", null)
+        throw fie
     } finally {
         echo ("User input: ${userInput}")
     }
+    setDisplay("Deploy Confirmed", "By user: ${userInput}")
 
     return userInput
 }
