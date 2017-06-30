@@ -2,15 +2,18 @@ pipeline {
     agent any
     stages {
         stage('Build') {
+            agent { node { label 'docker'} }
             steps {
                 timeout(time: 3, unit: 'MINUTES') {
                     retry(5) {
+                        sh './check-out.sh'
                         sh './build.groovy'
                     }
                 }
             }
         }
         stage('Test') {
+            agent { node { label 'docker'} }
             steps {
                 timeout(time: 3, unit: 'MINUTES') {
                     retry(5) {
